@@ -1,0 +1,251 @@
+# Snake Game
+# Compatible with Python 3.14
+
+import tkinter
+import random
+import math
+
+
+# Create game window
+window = tkinter.Tk()
+
+window_dimensions = [625, 625]
+
+window.geometry(
+    str(window_dimensions[0]) + "x" + str(window_dimensions[1])
+)
+
+window.resizable(False, False)
+window.title("Snake Game")
+
+
+# Game settings
+frames_per_second = 12
+
+
+# Create game canvas
+game_canvas = tkinter.Canvas(
+    window,
+    width=window_dimensions[0],
+    height=window_dimensions[1],
+    bd=0,
+    highlightthickness=0
+)
+
+game_canvas.pack()
+
+
+# Game variables
+game_scale = 25
+
+game_dimensions = [
+    window_dimensions[0] // game_scale,
+    window_dimensions[1] // game_scale
+]
+
+
+# Player position
+player_coords = [
+    math.floor(game_dimensions[0] / 2),
+    math.floor(game_dimensions[1] / 2)
+]
+
+# Snake tail
+player_tail = []
+
+# Starting direction: right
+player_velocity = [1, 0]
+
+# Prevent multiple direction changes per frame
+velocity_changed_this_frame = False
+
+
+# Generate apple coordinates
+def generate_apple_coords():
+    global player_tail
+
+    generated_apple_coords = [
+        random.randint(0, game_dimensions[0] - 1),
+        random.randint(0, game_dimensions[1] - 1)
+    ]
+
+    for item in player_tail:
+        if (
+            item[0] == generated_apple_coords[0]
+            and item[1] == generated_apple_coords[1]
+        ):
+            return generate_apple_coords()
+
+    return generated_apple_coords
+
+
+# Apple position
+apple_coords = generate_apple_coords()
+
+
+# Draw a grid item WITHOUT divider lines
+def create_grid_item(coords, hexcolor):
+    game_canvas.create_rectangle(
+        coords[0] * game_scale,
+        coords[1] * game_scale,
+        (coords[0] + 1) * game_scale,
+        (coords[1] + 1) * game_scale,
+        fill=hexcolor,
+        outline=hexcolor,
+        width=0
+    )
+
+
+# Main game loop
+def gameloop():
+    global velocity_changed_this_frame
+    global player_tail
+    global player_coords
+    global player_velocity
+    global apple_coords
+
+    # Run the game loop again
+    window.after(
+        int(1000 / frames_per_second),
+        gameloop
+    )
+
+    velocity_changed_this_frame = False
+
+    # Clear canvas
+    game_canvas.delete("all")
+
+    # Dark gray background
+    game_canvas.create_rectangle(
+        0,
+        0,
+        window_dimensions[0],
+        window_dimensions[1],
+        fill="#222222",
+        outline="#222222"
+    )
+
+    # Add current head position to snake
+    player_tail.append([
+        player_coords[0],
+        player_coords[1]
+    ])
+
+    # Move player
+    player_coords[0] += player_velocity[0]
+    player_coords[1] += player_velocity[1]
+
+    # Wrap around screen edges
+    if player_coords[0] == game_dimensions[0]:
+        player_coords[0] = 0
+
+    elif player_coords[0] == -1:
+        player_coords[0] = game_dimensions[0] - 1
+
+    elif player_coords[1] == game_dimensions[1]:
+        player_coords[1] = 0
+
+    elif player_coords[1] == -1:
+        player_coords[1] = game_dimensions[1] - 1
+
+    # Check for collision with snake
+    collision = False
+
+    for item in player_tail:
+        if (
+            item[0] == player_coords[0]
+            and item[1] == player_coords[1]
+        ):
+            collision = True
+            break
+
+    # Restart after collision
+    if collision:
+        player_coords = [
+            math.floor(game_dimensions[0] / 2),
+            math.floor(game_dimensions[1] / 2)
+        ]
+
+        player_tail = []
+        player_velocity = [1, 0]
+        apple_coords = generate_apple_coords()
+
+        return
+
+    # Draw snake
+    for item in player_tail:
+        create_grid_item(
+            item,
+            "#00ff00"
+        )
+
+    # Draw apple
+    create_grid_item(
+        apple_coords,
+        "#ff0000"
+    )
+
+    # Check if apple was eaten
+    if (
+        apple_coords[0] == player_coords[0]
+        and apple_coords[1] == player_coords[1]
+    ):
+        apple_coords = generate_apple_coords()
+
+    else:
+        player_tail.pop(0)
+
+
+# Keyboard controls
+def on_key_down(event):
+    global player_velocity
+    global velocity_changed_this_frame
+
+    if velocity_changed_this_frame is False:
+
+        velocity_changed_this_frame = True
+
+        # Left
+        if (
+            event.keysym == "Left"
+            and player_velocity[0] != 1
+        ):
+            player_velocity = [-1, 0]
+
+        # Right
+        elif (
+            event.keysym == "Right"
+            and player_velocity[0] != -1
+        ):
+            player_velocity = [1, 0]
+
+        # Up
+        elif (
+            event.keysym == "Up"
+            and player_velocity[1] != 1
+        ):
+            player_velocity = [0, -1]
+
+        # Down
+        elif (
+            event.keysym == "Down"
+            and player_velocity[1] != -1
+        ):
+            player_velocity = [0, 1]
+
+        else:
+            velocity_changed_this_frame = False
+
+
+# Bind arrow keys
+window.bind(
+    "<KeyPress>",
+    on_key_down
+)
+
+
+# Start game
+gameloop()
+
+# Start Tkinter
+window.mainloop()
