@@ -120,7 +120,7 @@ def draw():
 
     #draw snake
     canvas.create_rectangle(snake.x, snake.y, snake.x + TILE_SIZE, snake.y + TILE_SIZE, fill = 'red')
-    drawgrid()
+    
     for tile in snake_body:
         canvas.create_rectangle(tile.x, tile.y, tile.x + TILE_SIZE, tile.y + TILE_SIZE, fill = 'red')
 
@@ -136,13 +136,15 @@ def run():
     
     window.bind("<KeyRelease>", change_direction) #when you press on any key and then let go
     window.mainloop() #used for listening to window events like key presses
-    reset_game() #reset game variables when window is closed
-
+    
 while True:
     run()
 
 # Start game
 gameloop()
+
+# Start Tkinter
+window.mainloop()
 
 # Start Tkinter
 window.mainloop()
